@@ -1,76 +1,86 @@
 import './App.scss';
-import {useState} from "react";
+import {Component} from "react";
+import TaskInput from "./components/TaskInput";
+import TaskList from "./components/TaskList";
+import Footer from "./components/Footer";
 
 const gen = (id = 0) => () => id++;
 const genID = gen();
 
-function App() {
-    const [value, setValue] = useState('');
-    const [tasks, setTask] = useState([]);
-    const [filters, setFilters] = useState('all');
-
-    const handleInput = (event) => {
-        setValue(event.target.value);
+class App extends Component {
+    state = {
+        value: '',
+        tasks: [],
+        filters: 'all'
     }
 
-    const handleAddTask = (event) => {
+    handleInput = (event) => {
+        this.setState({value: event.target.value});
+    }
+
+    handleAddTask = (event) =>{
+        const {value, tasks} = this.state;
         if (event.key === 'Enter' && value.trim() !== '') {
-            setTask([...tasks, {
+            this.setState( {
+                tasks: [...tasks, {
                 id: genID(),
                 name: value.trim(),
                 status: false
-            }]);
-            setValue('');
+            }],
+            value: ''
+        });
         }
     }
 
-    const handleChangeStatus = (todo) => {
-        const updatedTasks = tasks.map((task) => {
+    handleChangeStatus = (todo) => {
+        const tasks = this.state.tasks.map((task) => {
             if (task === todo){
                 task.status = !task.status;
             }
             return task;
         });
 
-        setTask(updatedTasks);
+        this.setState({tasks});
     }
 
-    const handleDelete = (todo) => {
-      setTask(tasks.filter((task) => task !== todo));
+    handleDelete = (todo) => {
+      this.setState( {
+          tasks: this.state.tasks.filter((task) => task !== todo)
+      })
     }
 
-    const handleDeleteCompleted = () => {
-        setTask(tasks.filter((task) => !task.status));
+    handleDeleteCompleted = () => {
+        this.setState({tasks: this.state.tasks.filter((task) => !task.status)})
     }
-    
+
+    setFilters = (filters) => {
+        this.setState({filters})
+    }
+
+    render() {
+        const {value, tasks, filters} = this.state
     return (
-        <div className="App">
+        <main className="App">
             <h1 className='title'>todos</h1>
-            <input type="text" placeholder='What needs to be done?' value={value} onChange={handleInput} onKeyUp={handleAddTask}/>
-            <ul className="tasks">
-                {tasks
-                    .filter((task) => filters === 'all' ? true : task.status === filters).map((task) => (
-                    <li key={task.id} className="task">
-                        <span className={task.status ? 'status active' : 'status'}
-                              onClick={() => {handleChangeStatus(task)}}></span>
-                        <span className='span-text'>{task.name}</span>
-                        <button className='task-delete' onClick={() => handleDelete(task)}>x</button>
-                    </li>
-                ))}
-            </ul>
-            <div className='buttons'>
-                <div>
-                    {tasks.filter((task) => !task.status).length} items left
-                </div>
-                <div>
-                    <button className={filters === 'all' ? 'filter-active' : ''} onClick={() => setFilters('all')}>All</button>
-                    <button className={filters === false ? 'filter-active' : ''} onClick={() => setFilters(false)}>Active</button>
-                    <button className={filters === true ? 'filter-active' : ''} onClick={() => setFilters(true)}>Completed</button>
-                </div>
-                <button className='delete-btn' onClick={handleDeleteCompleted}>Clear completed</button>
-            </div>
-        </div>
+            <TaskInput value={value} handleInput={this.handleInput} handleAddTask={this.handleAddTask}/>
+
+            {!tasks.length || (
+                <>
+                    <TaskList
+                        tasks={tasks}
+                        filters={filters}
+                        handleChangeStatus={this.handleChangeStatus}
+                        handleDelete={this.handleDelete}/>
+                    <Footer
+                        filters={filters}
+                        setFilters={this.setFilters}
+                        tasks={tasks}
+                        handleDeleteCompleted={this.handleDeleteCompleted} />
+                </>
+            )}
+        </main>
     );
+    }
 }
 
 export default App;
